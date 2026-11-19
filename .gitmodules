@@ -1,0 +1,4 @@
+[submodule "screeps"]
+	path = screeps
+	url = https://github.com/nekomeowww/screeps.git
+	branch = release

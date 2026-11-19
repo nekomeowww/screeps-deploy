@@ -1,0 +1,66 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure git auth for private screeps submodule
+        run: |
+          git config --global \
+            url."https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/".insteadOf \
+            "https://github.com/"
+
+      - name: Checkout screeps-deploy
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.18.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: screeps/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: screeps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build bots
+        working-directory: screeps
+        run: pnpm --filter @screeps/bot-example... build
+
+      - name: Write Screeps credentials
+        run: |
+          mkdir -p "$RUNNER_TEMP/screeps-config"
+          cat > "$RUNNER_TEMP/screeps-config/config.yaml" <<EOF
+          servers:
+            mmo:
+              host: ${{ vars.SCREEPS_HOST || 'screeps.com' }}
+              secure: true
+              token: ${{ secrets.SCREeps_API_TOKEN }}
+          EOF
+
+      - name: Upload to Screeps
+        working-directory: screeps
+        env:
+          SCREEPS_CONFIG: ${{ runner.temp }}/screeps-config
+        run: |
+          pnpm exec screeps-api --server mmo upload \
+            -b "${{ vars.SCREEPS_BRANCH || 'default' }}" \
+            bots/example-bot/dist/main.js
