@@ -60,7 +60,7 @@ jobs:
       - name: Upload to Screeps
         working-directory: screeps
         env:
-          SCREEPS_CONFIG: ${{ runner.temp }}/screeps-config
+          SCREEPS_CONFIG: ${{ runner.temp }}/screeps-config/config.yaml
         run: |
           pnpm exec screeps-api upload \
             --server mmo \
