@@ -62,6 +62,7 @@ jobs:
         env:
           SCREEPS_CONFIG: ${{ runner.temp }}/screeps-config
         run: |
-          pnpm exec screeps-api --server mmo upload \
+          pnpm exec screeps-api upload \
+            --server mmo \
             -b "${{ vars.SCREEPS_BRANCH || 'default' }}" \
             bots/example-bot/dist/main.js
