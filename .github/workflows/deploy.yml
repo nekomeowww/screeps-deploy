@@ -1,10 +1,15 @@
 name: deploy
 
 on:
-  push:
-    branches:
-      - main
+  repository_dispatch:
+    types:
+      - deploy
   workflow_dispatch:
+    inputs:
+      ref:
+        description: 'screeps ref to deploy (branch, tag, or SHA)'
+        required: false
+        default: 'release'
 
 permissions:
   contents: read
@@ -13,17 +18,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Configure git auth for private screeps submodule
-        run: |
-          git config --global \
-            url."https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/".insteadOf \
-            "https://github.com/"
-
-      - name: Checkout screeps-deploy
+      - name: Checkout screeps
         uses: actions/checkout@v4
         with:
-          submodules: true
+          repository: nekomeowww/screeps
+          ref: ${{ github.event.client_payload.sha || inputs.ref || 'release' }}
           token: ${{ secrets.PAT_TOKEN }}
+          path: screeps
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
